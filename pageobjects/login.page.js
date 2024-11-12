@@ -16,10 +16,10 @@ describe('Sauce Demo Login Tests', () => {
             // Open the login page
             await LoginPage.open();
 
-            // Perform the login with the username and password
+        // Perform the login with the username and password
             await LoginPage.login(user.username, user.password);
 
-            // Wait for the page to load (to simulate page load time)
+        // Wait for the page to load (to simulate page load time)
             await browser.pause(2000);
 
             if (user.shouldLogin) {
