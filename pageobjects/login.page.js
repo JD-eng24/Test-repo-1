@@ -1,59 +1,38 @@
-import { $ } from '@wdio/globals'
-import Page from './page.js';
+import LoginPage from '../pageobjects/login.page';
 
-/**
- * sub page containing specific selectors and methods for a specific page
- */
-class LoginPage extends Page {
-    /**
-     * define selectors using getter methods
-     */
-    get inputUsername () {
-        return $('#username');
-    }
+describe('Sauce Demo Login Tests', () => {
 
-    get inputPassword () {
-        return $('#password');
-    }
+    // Define users and their expected login behavior
+    const users = [
+        { username: 'standard_user', password: 'secret_sauce', shouldLogin: true, expectedError: '' },
+        { username: 'locked_out_user', password: 'secret_sauce', shouldLogin: false, expectedError: 'Epic sadface: Sorry, this user has been locked out.' },
+        { username: 'problem_user', password: 'secret_sauce', shouldLogin: true, expectedError: '' },
+        { username: 'performance_glitch_user', password: 'secret_sauce', shouldLogin: true, expectedError: '' },
+        { username: 'invalid_user', password: 'wrong_password', shouldLogin: false, expectedError: 'Epic sadface: Username and password do not match any user in this service' },
+    ];
 
-    get btnSubmit () {
-        return $('button[type="submit"]');
-    }
-    get errorMessage() {
-        return $('h3[data-test="error"]');
-    }
+    users.forEach((user) => {
+        it(`should ${user.shouldLogin ? 'successfully' : 'unsuccessfully'} log in with username: ${user.username}`, async () => {
+            // Open the login page
+            await LoginPage.open();
 
-  
-    /**
-     * Method to log in with the provided username and password
-     * @param {string} username - The username for login
-     * @param {string} password - The password for login
-     */
-    async login (username, password) {
-        await this.inputUsername.setValue(username);
-        await this.inputPassword.setValue(password);
-        await this.btnSubmit.click();
-    }
+            // Perform the login with the username and password
+            await LoginPage.login(user.username, user.password);
 
-    /**
-     * Method to open the login page
-     * Assume baseURL is configured in WebDriverIO config
-     */
-    open() {
-        return super.open('login'); //Navigates to /login page
-    }
+            // Wait for the page to load (to simulate page load time)
+            await browser.pause(2000);
 
-   /** 
-    * Method to check if login failed by detecting error messages
-   */
-    async isLoginError() {
-        try {
-            await this.errorMessage.waitForDisplayed({ timeout:5000 });
-            return await this.errorMessage.isDisplayed();
-        } catch (error) {
-            return false ; //if error message isn't displayed, return false
-        }
-    }
-}
+            if (user.shouldLogin) {
+                // Positive Test: Check if login is successful by confirming presence of the product page (e.g., a page element such as the product title)
+                const productTitle = await $('.title'); // The product page has a title element with class "title"
+                await expect(productTitle).toHaveTextContaining('Products');
+            } else {
+                // Negative Test: Check if the login error message is displayed
+                const errorMessage = await LoginPage.isLoginError();
+                await expect(errorMessage).toBe(true);
+                await expect(LoginPage.errorMessage).toHaveTextContaining(user.expectedError);
+            }
+        });
+    });
+});
 
-export default new LoginPage();
